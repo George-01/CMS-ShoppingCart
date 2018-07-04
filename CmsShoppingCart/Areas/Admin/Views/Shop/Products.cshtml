@@ -47,8 +47,9 @@
             <td>@product.Description</td>
             <td>$@product.Price</td>
             <td>
-                <a href="/admin/shop/EditProduct/@product.Id"></a>
-                <img src="/Images/Uploads/Products/@product.Id/Thumbs/@product.ImageName"/>
+                <a href="/admin/shop/EditProduct/@product.Id">
+                    <img src="/Images/Uploads/Products/@product.Id/Thumbs/@product.ImageName" />
+                </a>
             </td>
             <td>
                 @Html.ActionLink("Edit", "EditProduct", new { id = product.Id }) |
