@@ -2,6 +2,7 @@
 
 @{
     ViewBag.Title = "Cart Details";
+    int count = 1;
 }
 
 <h2>Cart Details</h2>
@@ -12,7 +13,7 @@
 }
 else
 {
-                <table class="table">
+            <table class="table">
                 <tr>
                     <th>
                         Name
@@ -70,6 +71,27 @@ else
                     </tr>
 
             </table>
+            <div class="paypaldiv">
+                <form class="paypalform" action="https://www.sandbox.paypal.com/cgi-bin/webscr" method="post">
+                    <input type="hidden" name="cmd" value="_cart">
+                    <input type="hidden" name="upload" value="1">
+                    <input type="hidden" name="business" value="georgec-facilitator@usa.com">
+
+                    @foreach (var item in Model)
+                {
+                        <input type="hidden" name="item_name_@count" value="@item.ProductName">
+                        <input type="hidden" name="amount_@count" value="@item.Price">
+                        <input type="hidden" name="quantity_@count" value="@item.Quantity">
+                        count++;
+                    }
+
+                    <input type="hidden" name="currency_code" value="USD">
+                    <input type="image" src="http://www.paypal.com/en_US/i/btn/x-click-but01.gif" name="submit" alt="Make payments with PayPal - it's fast, free and secure!">
+                </form>
+            </div>
+            <br/>
+            <a href="#" class="placeorder btn btn-primary pull-right">Checkout</a>
+
 }
 
 @section scripts{
@@ -99,6 +121,12 @@ else
                 var grandtotal = (gt + data.price).toFixed(2);
 
                 $("td.grandtotal span").text(grandtotal)
+            }).done(function (data) {
+                var url2 = "~/cart/PayPalPartial";
+
+                $.get(url2, {  }, function (data) {
+                    $('div.paypaldiv').tml(data);
+                });
             });
         });
 
@@ -117,14 +145,12 @@ else
 
             $.getJSON(url, { productId: productId }, function (data) {
 
-                if (data.qty == 0)
-                {
+                if (data.qty == 0) {
                     $this.parent().parent().fadeOut("fast", function () {
                         location.reload();
                     });
                 }
-                else
-                {
+                else {
                     $("td.qty" + productId).html(data.qty);
 
                     var price = data.qty * data.price;
@@ -139,7 +165,13 @@ else
                     $("td.grandtotal span").text(grandtotal)
                 }
 
-                
+
+            }).done(function (data) {
+                var url2 = "~/cart/PayPalPartial";
+
+                $.get(url2, {}, function (data) {
+                    $('div.paypaldiv').tml(data);
+                });
             });
         });
         //////////////////////////
@@ -159,7 +191,29 @@ else
                 location.reload();
             });
         });
+        //////////////////////////
 
+        /*
+        Place order
+    */
+ 
+        $("a.placeorder").click(function (e) {
+            e.preventDefault();
+
+            var $this = $(this);
+
+            var url = "/cart/PlaceOrder";
+
+            $(".ajaxbg").show();
+
+            $.post(url, { }, function (data) {
+                $(".ajaxbg span").text("Thank you. You will now be redirected to paypal.");
+
+                setTimeout(function () {
+                    $('form input[name="submit"]').click();
+                },2000);
+            });
+        });
     });
 </script>
 

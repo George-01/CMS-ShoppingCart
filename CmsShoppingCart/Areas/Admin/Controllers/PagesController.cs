@@ -9,6 +9,7 @@ using CmsShoppingCart.Models.ViewModels.Pages;
 
 namespace CmsShoppingCart.Areas.Admin.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class PagesController : Controller
     {
         // GET: Admin/Pages

@@ -17,14 +17,16 @@
         $@Html.DisplayFor(model => model.Price)
         <br />
 
-
-        <div class="addtocart">
-            <a href="#" class="addtocart">Add to cart</a>
-            <span class="loader">
-                <img src="~/Content/img/ajax-loader.gif" />
-            </span>
-            <span class="ajaxmsg">The product has been added to your cart.</span>
-        </div>
+        @if (Request.IsAuthenticated)
+        {
+            <div class="addtocart">
+                <a href="#" class="addtocart">Add to cart</a>
+                <span class="loader">
+                    <img src="~/Content/img/ajax-loader.gif" />
+                </span>
+                <span class="ajaxmsg">The product has been added to your cart.</span>
+            </div>
+        }
     </div>
 </div>
 <hr />
@@ -37,7 +39,7 @@
         {
             <div style="display:inline-block">
                 <a class="fancybox" rel="gallery1" href="/Images/Uploads/Products/@Model.Id/Gallery/@image">
-                    <img src="/Images/Uploads/Products/@Model.Id/Gallery/Thumbs/@image"/>
+                    <img src="/Images/Uploads/Products/@Model.Id/Gallery/Thumbs/@image" />
                 </a>
             </div>
         }
@@ -46,40 +48,40 @@
 
 <link href="~/Content/jquery.fancybox.css" rel="stylesheet" />
 @section Scripts{
-<script src="~/Scripts/jquery.fancybox.js"></script>
-<script>
-$(function () {
-    /*
-    * Fancybox
-    */
-    $(".fancybox").fancybox();
+    <script src="~/Scripts/jquery.fancybox.js"></script>
+    <script>
+        $(function () {
+            /*
+            * Fancybox
+            */
+            $(".fancybox").fancybox();
 
-    //////////////////////////////
+            //////////////////////////////
 
-    /*
-    * Add to cart
-    */
-    $("a.addtocart").click(function (e) {
-        e.preventDefault();
+            /*
+            * Add to cart
+            */
+            $("a.addtocart").click(function (e) {
+                e.preventDefault();
 
-        $("span.loader").addClass("ib");
+                $("span.loader").addClass("ib");
 
-        var url = "/cart/AddToCartPartial";
+                var url = "/cart/AddToCartPartial";
 
-        $.get(url, {id: @Model.Id}, function(data){
-            $(".ajaxcart").html(data);
-        }).done(function(){
-            $("span.loader").removeClass("ib");
-            $("span.ajaxmsg").addClass("ib");
-            setTimeout(function(){
-                $("span.ajaxmsg").fadeOut("fast");
-                $("span.ajaxmsg").removeClass("ib");
-            },1000);
+                $.get(url, {id: @Model.Id}, function(data){
+                    $(".ajaxcart").html(data);
+                }).done(function(){
+                    $("span.loader").removeClass("ib");
+                    $("span.ajaxmsg").addClass("ib");
+                    setTimeout(function(){
+                        $("span.ajaxmsg").fadeOut("fast");
+                        $("span.ajaxmsg").removeClass("ib");
+                    },1000);
+                });
+            });
+
+            //////////////////////////////
         });
-    });
+    </script>
 
-    //////////////////////////////
-});
-</script>
-
-    }
+}

@@ -3,6 +3,8 @@ using CmsShoppingCart.Models.ViewModels.Cart;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Mail;
 using System.Web;
 using System.Web.Mvc;
 
@@ -17,7 +19,7 @@ namespace CmsShoppingCart.Controllers
             var cart = Session["cart"] as List<CartVM> ?? new List<CartVM>();
 
             //check if cart is empty
-            if(cart.Count == 0 || Session["cart"] == null)
+            if (cart.Count == 0 || Session["cart"] == null)
             {
                 ViewBag.Message = "Your cart is empty";
                 return View();
@@ -47,12 +49,12 @@ namespace CmsShoppingCart.Controllers
             decimal price = 0m;
 
             //Check for cart session
-            if(Session["cart"] != null)
+            if (Session["cart"] != null)
             {
                 //Get total quantity and price
                 var list = (List<CartVM>)Session["cart"];
 
-                foreach(var item in list)
+                foreach (var item in list)
                 {
                     qty += item.Quantity;
                     price += item.Quantity * item.Price;
@@ -79,7 +81,7 @@ namespace CmsShoppingCart.Controllers
             //Init CartVM
             CartVM model = new CartVM();
 
-            using(Db db = new Db())
+            using (Db db = new Db())
             {
                 //Get Product
                 ProductDTO product = db.Products.Find(id);
@@ -88,7 +90,7 @@ namespace CmsShoppingCart.Controllers
                 var productInCart = cart.FirstOrDefault(x => x.ProductId == id);
 
                 //If not, add new
-                if(productInCart == null)
+                if (productInCart == null)
                 {
                     cart.Add(new CartVM()
                     {
@@ -96,7 +98,7 @@ namespace CmsShoppingCart.Controllers
                         ProductName = product.Name,
                         Quantity = 1,
                         Price = product.Price,
-                        Image = product.ImageName                    
+                        Image = product.ImageName
                     });
                 }
                 else
@@ -132,7 +134,7 @@ namespace CmsShoppingCart.Controllers
             //Init cart list
             List<CartVM> cart = Session["cart"] as List<CartVM>;
 
-            using(Db db = new Db())
+            using (Db db = new Db())
             {
                 //Get cartVM from list
                 CartVM model = cart.FirstOrDefault(x => x.ProductId == productId);
@@ -141,7 +143,7 @@ namespace CmsShoppingCart.Controllers
                 model.Quantity++;
 
                 //Store needed data
-                var result = new { qty = model.Quantity, price = model.Price};
+                var result = new { qty = model.Quantity, price = model.Price };
 
                 //Return json with data
                 return Json(result, JsonRequestBehavior.AllowGet);
@@ -153,13 +155,13 @@ namespace CmsShoppingCart.Controllers
             //init cart
             List<CartVM> cart = Session["cart"] as List<CartVM>;
 
-            using(Db db = new Db())
+            using (Db db = new Db())
             {
                 //Get model from list
                 CartVM model = cart.FirstOrDefault(x => x.ProductId == productId);
 
                 //Decrement qty
-                if(model.Quantity > 1)
+                if (model.Quantity > 1)
                 {
                     model.Quantity--;
                 }
@@ -182,7 +184,7 @@ namespace CmsShoppingCart.Controllers
             //Init Cart list
             List<CartVM> cart = Session["cart"] as List<CartVM>;
 
-            using(Db db = new Db())
+            using (Db db = new Db())
             {
                 //Get model list
                 CartVM model = cart.FirstOrDefault(x => x.ProductId == productId);
@@ -190,6 +192,72 @@ namespace CmsShoppingCart.Controllers
                 //Remove model from list
                 cart.Remove(model);
             }
+        }
+        public ActionResult PayPalPartial()
+        {
+            //Init Cart list
+            List<CartVM> cart = Session["cart"] as List<CartVM>;
+            return PartialView(cart);
+        }
+        // POST: /Cart/PlaceOrder
+        [HttpPost]
+        public void PlaceOrder()
+        {
+            //Get Cart list
+            List<CartVM> cart = Session["cart"] as List<CartVM>;
+
+            //Get Username
+            string username = User.Identity.Name;
+
+            //Get inserted Id
+            int orderId = 0;
+
+            using (Db db = new Db())
+            {
+
+                //Init OrderDTO
+                OrderDTO orderDTO = new OrderDTO();
+
+                //Get UserId
+                var q = db.Users.FirstOrDefault(x => x.Username == username);
+                int userId = q.Id;
+
+                //Add to OrderDTO and Save
+                orderDTO.UserId = userId;
+                orderDTO.CreatedAt = DateTime.Now;
+
+                db.Orders.Add(orderDTO);
+
+                db.SaveChanges();
+
+                //Get inserted Id
+                orderId = orderDTO.OrderId;
+
+                //Init OrderDetailsDTO
+                OrderDetailsDTO orderDetailsDTO = new OrderDetailsDTO();
+
+                //Add to OrderDetailsDTO
+                foreach (var item in cart)
+                {
+                    orderDetailsDTO.OrderId = orderId;
+                    orderDetailsDTO.UserId = userId;
+                    orderDetailsDTO.ProductId = item.ProductId;
+                    orderDetailsDTO.Quantity = item.Quantity;
+
+                    db.OrderDetails.Add(orderDetailsDTO);
+                    db.SaveChanges();
+                }
+            }
+            //Email Admin
+            var client = new SmtpClient("smtp.mailtrap.io", 2525)
+            {
+                Credentials = new NetworkCredential("4907fe9a0c82a0", "9f8a26aa254b89"),
+                EnableSsl = true
+            };
+            client.Send("admin@example.com", "admin@example.com", "New Order", "You have a new order. Order number is " + orderId);
+
+            //Reset Session
+            Session["cart"] = null;
         }
     }
 }
